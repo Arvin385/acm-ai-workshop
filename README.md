@@ -1,5 +1,6 @@
 # acm-ai-workshop
 Fall 2025 Workshop on AI for ACM. There are multiple programs in this repo. The first is a basic API for a Gemini LLM. Students will note two major difficulties when using the LLM: 1. The pre-trained model often times gives out-of-date information. 2. Its "memory" is limited to the immediately stated prompt. The others correct for these issues.
+
 # Fall 2025 ACM Workshop: AI with Gemini and Memory
 
 Welcome to the **Fall 2025 ACM Workshop on AI**! In this workshop, we explore how to use large language models (LLMs) effectively, including how to handle **timely information** and **persistent memory**.
@@ -34,7 +35,9 @@ We recommend using a virtual environment to manage dependencies:
 
 ```bash
 python -m venv venv
+
 source venv/bin/activate      # On Linux/macOS
+
 venv\Scripts\activate         # On Windows
 ```
 
@@ -157,10 +160,9 @@ if retrieved_text:
 ## 4. Notes and Tips
 
 * Gemini **requires an internet connection** for API calls.
-* FAISS memory is **local**, so no LLM model needs to run on your machine.
+* FAISS memory is **local**, but no LLM model needs to run on your machine.
 * Adjust **keywords, chunk size, and k** to balance **speed vs context richness**.
-* Always **trust your FAISS index**, especially if you ever download or share `.pkl` files.
-
+* When web-retrieving, it is more accurate to send in the user's query to an LLM to determine whether a web search is even required. This would replace the keyword comparison, heavily trading content accuracy over time efficiency. 
 ---
 
 ## 5. Summary
