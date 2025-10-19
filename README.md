@@ -1,2 +1,154 @@
 # acm-ai-workshop
 Fall 2025 Workshop on AI for ACM. There are multiple programs in this repo. The first is a basic API for a Gemini LLM. Students will note two major difficulties when using the LLM: 1. The pre-trained model often times gives out-of-date information. 2. Its "memory" is limited to the immediately stated prompt. The others correct for these issues.
+
+Fall 2025 ACM Workshop: AI with Gemini and Memory
+
+Welcome to the Fall 2025 ACM Workshop on AI! In this workshop, we explore how to use large language models (LLMs) effectively, including how to handle timely information and persistent memory.
+
+This repository contains three programs:
+
+Basic Gemini LLM API – A simple LLM interface.
+
+Web + Gemini LLM – Adds web scraping to provide up-to-date info.
+
+Web + Memory + Gemini LLM – Adds a FAISS memory system to remember prior interactions.
+
+1. Prerequisites
+1.1 Gemini API Key
+
+Before running any code, you need a Gemini API key:
+
+Go to Google AI Studio
+.
+
+Create a project and generate a Gemini API key.
+
+Store the key as an environment variable:
+
+export GEMINI_API_KEY="your_api_key_here"
+
+1.2 Create a Python Virtual Environment
+
+We recommend using a virtual environment to manage dependencies:
+
+python -m venv venv
+source venv/bin/activate      # On Linux/macOS
+venv\Scripts\activate         # On Windows
+
+1.3 Install Dependencies
+pip install -r requirements.txt
+
+2. Running the Programs
+2.1 Basic Gemini LLM
+
+Run the simplest LLM API:
+
+python basic_gemini.py
+
+
+Type a query and see Gemini respond.
+
+Observation:
+
+The model may give out-of-date information.
+
+It forgets context beyond the immediate prompt.
+
+2.2 Gemini + Web Scraping
+
+Run:
+
+python web_LLM.py
+
+
+Fetches timely information from the web.
+
+Customizable parameters:
+
+Keywords: Lines ~53–57
+
+KEYWORDS = ["stock", "news", "weather", "when", "time", "crypto"]
+
+
+Add or remove keywords to control when web scraping happens.
+
+Web scraping depth: Lines ~60–80
+
+def fetch_web_info(query, max_links=3, max_paragraphs=5):
+
+
+Adjust max_links or max_paragraphs to balance response quality vs speed.
+
+2.3 Gemini + Web + Memory (FAISS)
+
+Run:
+
+python web_and_mem_LLM.py
+
+
+Stores past interactions in a FAISS vector store for persistent memory.
+
+Customizable parameters:
+
+1. FAISS chunk size and overlap (Lines ~138–145)
+text_splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=50)
+
+
+chunk_size: Larger chunks → fewer docs, faster retrieval, less granular memory.
+
+chunk_overlap: Helps maintain context across chunks.
+
+2. Embedding model (Line ~28)
+model = SentenceTransformer("all-MiniLM-L6-v2")
+embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
+
+
+Switch to a larger model for better semantic understanding, or smaller for speed on weaker computers.
+
+3. Number of FAISS documents retrieved (Line ~140)
+relevant_docs = faiss.similarity_search(user_input, k=3)
+
+
+Increase k to consider more memory context.
+
+Decrease k for faster responses and simpler prompts.
+
+4. Web + Memory prompt formatting (Lines ~122–130)
+llm_prompt = prompt_with_web
+if retrieved_text:
+    llm_prompt += f"\n\nConsider this past info:\n{retrieved_text}"
+
+
+Customize to prioritize web info vs memory or format prompts differently.
+
+3. Hands-On Exercises
+
+Add a keyword: Try "sports" in KEYWORDS and ask Gemini for scores.
+
+Increase scraping depth: Set max_links=5 and max_paragraphs=10 and see the difference in response.
+
+Adjust memory granularity: Change chunk_size to 200 and chunk_overlap to 50, then ask about past interactions.
+
+Switch embeddings: Try "all-MiniLM-L12-v2" for more semantic accuracy.
+
+4. Notes and Tips
+
+Gemini requires an internet connection for API calls.
+
+FAISS memory is local, so no LLM model needs to run on your machine.
+
+Adjust keywords, chunk size, and k to balance speed vs context richness.
+
+Always trust your FAISS index, especially if you ever download or share .pkl files.
+
+5. Summary
+
+By the end of this workshop, students will be able to:
+
+Query a Gemini LLM.
+
+Fetch real-time web information.
+
+Build a persistent memory with FAISS.
+
+Customize prompts, embeddings, memory, and web scraping for personalized AI assistants.
