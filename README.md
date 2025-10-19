@@ -3,7 +3,8 @@ Fall 2025 Workshop on AI for ACM. There are multiple programs in this repo. The 
 
 # Fall 2025 ACM Workshop: AI with Gemini and Memory
 
-Welcome to the **Fall 2025 ACM Workshop on AI**! In this workshop, we explore how to use large language models (LLMs) effectively, including how to handle **timely information** and **persistent memory**.
+Welcome to the **Fall 2025 ACM Workshop on AI**! Most people use AI tools like ChatGPT or Gemini, but those tools are built on top of a basic LLM. A basic LLM can only respond using what it learned during training — it can’t look up new information or remember past conversations.
+In this workshop, we’ll improve the basic Gemini LLM by adding two key features: web retrieval for up-to-date answers and FAISS memory so it can remember previous chats.
 
 This repository contains **three programs**:
 
@@ -11,10 +12,6 @@ This repository contains **three programs**:
 2. **Web + Gemini LLM** – Adds web scraping to provide up-to-date info.
 3. **Web + Memory + Gemini LLM** – Adds a FAISS memory system to remember prior interactions.
 
-## Some Context: ##
-
-Most people interact with AI products like ChatGPT or Gemini, not with the raw language model underneath. The difference? A basic LLM can only answer based on what it was trained on — it has no memory and no way to fetch new data.
-In this workshop, we’ll extend the basic Gemini LLM by adding web retrieval for up-to-date knowledge and FAISS memory for persistent context — the same principles that make real AI assistants intelligent and useful.
 ---
 
 ## 1. Prerequisites
