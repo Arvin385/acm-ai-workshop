@@ -11,6 +11,9 @@ This repository contains **three programs**:
 2. **Web + Gemini LLM** – Adds web scraping to provide up-to-date info.
 3. **Web + Memory + Gemini LLM** – Adds a FAISS memory system to remember prior interactions.
 
+## Some Context:
+Most people use AI tools like ChatGPT, Claude, or Gemini, but those tools are built on top of a basic LLM. A basic LLM can only respond using what it learned during training — it can’t look up new information or remember past conversations.
+In this workshop, we’ll improve the basic Gemini LLM by adding two key features: web retrieval for up-to-date answers and FAISS memory so it can remember previous chats.
 ---
 
 ## 1. Prerequisites
