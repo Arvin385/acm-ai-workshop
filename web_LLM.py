@@ -2,25 +2,21 @@ import os
 import requests
 from bs4 import BeautifulSoup
 import urllib
-import time
-
 from urllib.parse import urlparse, parse_qs, unquote
+import time
 from rich.console import Console
-from rich.spinner import Spinner
 from rich.prompt import Prompt
-from rich.text import Text
 
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 MODEL_NAME = "gemini-2.5-pro"
 BASE_URL = f"https://generativelanguage.googleapis.com/v1beta/models/{MODEL_NAME}:generateContent"
 
+console = Console()
+
 # -----------------------
 # Gemini Query Function
 # -----------------------
 def query_gemini(prompt_text):
-    """
-    Sends a prompt to Gemini 2.5 Pro and returns the generated text.
-    """
     headers = {
         "Content-Type": "application/json",
         "x-goog-api-key": GEMINI_API_KEY
@@ -28,10 +24,7 @@ def query_gemini(prompt_text):
 
     data = {
         "contents": [
-            {
-                "role": "user",
-                "parts": [{"text": prompt_text}]
-            }
+            {"role": "user", "parts": [{"text": prompt_text}]}
         ]
     }
 
@@ -48,41 +41,32 @@ def query_gemini(prompt_text):
 # -----------------------
 # Keyword Detection
 # -----------------------
-KEYWORDS = ["stock", "news", "weather", "when", "time", "crypto"] ## ADD YOUR OWN KEYWORD DETECTION FOR WEBSCRAPING
+KEYWORDS = ["stock", "news", "weather", "when", "time", "crypto"]
 
 def needs_timely_info(user_input):
-    """
-    Checks if the input contains keywords that indicate RAG is needed.
-    """
     return any(keyword.lower() in user_input.lower() for keyword in KEYWORDS)
 
 # -----------------------
-# Web Scraping Function
+# Web Scraping Functions
 # -----------------------
-import requests
-from bs4 import BeautifulSoup
-import urllib
-from urllib.parse import urlparse, parse_qs, unquote
-
-
 def extract_real_url(duck_url):
-    """
-    Decodes DuckDuckGo redirect links and returns the actual URL.
-    """
     parsed = urlparse(duck_url)
-    if "duckduckgo.com" in parsed.netloc and parsed.path.startswith("/l/"):
+    if "duckduckgo.com" in parsed.netloc and parsed.path == "/l/":
         qs = parse_qs(parsed.query)
         if "uddg" in qs:
             return unquote(qs["uddg"][0])
     return duck_url
+
 def fetch_web_info(query, max_links=5, max_paragraphs=10):
     query_encoded = urllib.parse.quote_plus(query)
     search_url = f"https://duckduckgo.com/html/?q={query_encoded}"
 
     headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-                      "AppleWebKit/537.36 (KHTML, like Gecko) "
-                      "Chrome/120.0.0.0 Safari/537.36"
+        "User-Agent": (
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+            "AppleWebKit/537.36 (KHTML, like Gecko) "
+            "Chrome/120.0.0.0 Safari/537.36"
+        )
     }
 
     try:
@@ -93,7 +77,6 @@ def fetch_web_info(query, max_links=5, max_paragraphs=10):
 
     soup = BeautifulSoup(response.text, "html.parser")
 
-    # Grab links (redirects and direct)
     links = []
     for a_tag in soup.find_all("a", href=True):
         href = a_tag["href"]
@@ -117,45 +100,28 @@ def fetch_web_info(query, max_links=5, max_paragraphs=10):
 
     return " ".join(collected_text) if collected_text else "No timely info found."
 
-
-console = Console()
-
 # -----------------------
-# Main Chat Function
+# Main Chat Loop
 # -----------------------
 def chat_loop():
     console.print("[bold green]Gemini RAG Chat[/bold green]. Type 'exit' to quit.")
-    conversation_history = []
 
     while True:
         user_input = Prompt.ask("[bold cyan]You[/bold cyan]")
         if user_input.lower() in ("exit", "quit"):
             break
 
-        # Check if we need to scrape
+        final_prompt = user_input
+
         if needs_timely_info(user_input):
             with console.status("[bold yellow]Fetching timely info from the web...[/bold yellow]", spinner="dots"):
                 web_info = fetch_web_info(user_input)
-                time.sleep(0.5)  # small delay to make spinner visible
-
-            # Structured prompt for the LLM to use web info authoritatively
-            final_prompt = (
-                "You are a helpful AI assistant. Answer the user's question using ONLY the information "
-                "provided below. Do not guess or add additional information.\n\n"
-                f"INFORMATION:\n{web_info}\n\n"
-                f"QUESTION:\n{user_input}\n\n"
-                "Provide a concise, factual answer based strictly on the information above."
-            )
-        else:
-            final_prompt = user_input
+                time.sleep(0.5)
+            if web_info != "No timely info found.":
+                final_prompt += f"\n\nUse this up-to-date information to answer:\n{web_info}"
 
         with console.status("[bold yellow]LLM is generating...[/bold yellow]", spinner="dots"):
-            response = query_gemini(final_prompt)
-
-        # Print chat
-        # Remove duplicate user line to avoid double printing
-        console.print("[bold magenta]Gemini:[/bold magenta]", response)
-        conversation_history.append({"user": user_input, "gemini": response})
-
-if __name__ == "__main__":
-    chat_loop()
+            try:
+                response = query_gemini(final_prompt)
+            except requests.exceptions.HTTPError as e:
+                response = f"[Error] G
