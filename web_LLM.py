@@ -75,27 +75,25 @@ def extract_real_url(duck_url):
         if "uddg" in qs:
             return unquote(qs["uddg"][0])
     return duck_url
-
-def fetch_web_info(query, max_links=5, max_paragraphs=5):
-    """
-    Fetches text from the top DuckDuckGo search results.
-    """
+def fetch_web_info(query, max_links=5, max_paragraphs=10):
     query_encoded = urllib.parse.quote_plus(query)
     search_url = f"https://duckduckgo.com/html/?q={query_encoded}"
 
     headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                      "AppleWebKit/537.36 (KHTML, like Gecko) "
+                      "Chrome/120.0.0.0 Safari/537.36"
     }
 
     try:
-        response = requests.get(search_url, headers=headers, timeout=5)
+        response = requests.get(search_url, headers=headers, timeout=10)
         response.raise_for_status()
     except Exception as e:
         return f"Failed to fetch search results: {e}"
 
     soup = BeautifulSoup(response.text, "html.parser")
 
-    # Collect links
+    # Grab links (redirects and direct)
     links = []
     for a_tag in soup.find_all("a", href=True):
         href = a_tag["href"]
@@ -106,19 +104,13 @@ def fetch_web_info(query, max_links=5, max_paragraphs=5):
         if len(links) >= max_links:
             break
 
-    # Scrape each link for text
     collected_text = []
     for link in links:
         try:
-            resp = requests.get(link, headers=headers, timeout=5)
+            resp = requests.get(link, headers=headers, timeout=10)
             resp.raise_for_status()
             page_soup = BeautifulSoup(resp.text, "html.parser")
-
-            # Grab text from <p> tags first
-            texts = [p.get_text(strip=True) for p in page_soup.find_all("p")[:max_paragraphs]]
-            if not texts:
-                # fallback to <div> if no <p> found
-                texts = [div.get_text(strip=True) for div in page_soup.find_all("div")[:max_paragraphs]]
+            texts = [tag.get_text(strip=True) for tag in page_soup.find_all(["p","div","span"])[:max_paragraphs]]
             collected_text.extend(texts)
         except Exception:
             continue
