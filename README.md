@@ -41,10 +41,20 @@ source venv/bin/activate      # On Linux/macOS
 
 venv\Scripts\activate         # On Windows
 ```
+On Windows, if you encounter an execution policy error, you may have to run the following in Command Prompt:
+```bash
+Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser   
+```
 
 ---
 
 ### 1.3 Install Dependencies
+If you haven't already, you need to install Python. 
+To check if you have it or not, run:
+```bash
+python --version
+```
+If you get an actual version, you are set. If you get some error about Python not existing, then you need to install it (Python website for Windows, and use Homebrew for Mac).
 
 ```bash
 pip install -r requirements.txt
@@ -59,7 +69,7 @@ pip install -r requirements.txt
 Run the simplest LLM API:
 
 ```bash
-python basic_gemini.py
+python basic_LLM.py
 ```
 
 * Type a query and see Gemini respond.
