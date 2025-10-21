@@ -20,14 +20,18 @@ This repository contains **three programs**:
 
 Before running any code, you need a **Gemini API key**:
 
-1. Go to [Google AI Studio](https://studio.ai.google/).
+1. Go to [Google AI Studio](https://aistudio.google.com/app/api-keys).
 2. Create a project and generate a **Gemini API key**.
 3. Store the key as an environment variable:
 
+Linux/macOS:
 ```bash
 export GEMINI_API_KEY="your_api_key_here"
 ```
-
+Windows: (make sure to use quotes around the api key)
+```bash
+$env:GEMINI_API_KEY="your_api_key_here"
+```
 ---
 
 ### 1.2 Create a Python Virtual Environment
