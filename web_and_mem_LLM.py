@@ -13,13 +13,13 @@ from rich.prompt import Prompt
 from langchain.embeddings import HuggingFaceEmbeddings
 from langchain.vectorstores import FAISS
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-from sentence_transformers import SentenceTransformer
 
+from sentence_transformers import SentenceTransformer
 import warnings
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 # -----------------------
-# Load embeddings
+# Load lightweight sentence-transformers model
 # -----------------------
 model = SentenceTransformer("all-MiniLM-L6-v2")
 embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
@@ -32,6 +32,7 @@ MODEL_NAME = "gemini-2.5-pro"
 BASE_URL = f"https://generativelanguage.googleapis.com/v1beta/models/{MODEL_NAME}:generateContent"
 
 def query_gemini(prompt_text):
+    """Send a prompt to Gemini 2.5 Pro and return the generated text."""
     headers = {
         "Content-Type": "application/json",
         "x-goog-api-key": GEMINI_API_KEY
@@ -73,9 +74,9 @@ def extract_real_url(duck_url):
     return duck_url
 
 def fetch_web_info(query, max_links=5, max_paragraphs=7):
+    """Fetch text from the first few paragraphs of top DuckDuckGo results."""
     query_encoded = urllib.parse.quote_plus(query)
     search_url = f"https://duckduckgo.com/html/?q={query_encoded}"
-    
     headers = {
         "User-Agent": (
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
@@ -92,30 +93,25 @@ def fetch_web_info(query, max_links=5, max_paragraphs=7):
 
     soup = BeautifulSoup(response.text, "html.parser")
 
-    # Extract real links
+    # NEW FIX: select links the same way as the working web_LLM.py
     links = []
-    for a_tag in soup.find_all("a", href=True):
-        href = a_tag["href"]
-        if "duckduckgo.com/l/" in href or (href.startswith("http") and "duckduckgo.com" not in href):
+    for a_tag in soup.find_all("a", class_="result__a")[:max_links]:
+        href = a_tag.get("href")
+        if href:
             real_url = extract_real_url(href)
-            if real_url not in links:
-                links.append(real_url)
-        if len(links) >= max_links:
-            break
+            links.append(real_url)
 
     if not links:
         return "No search links found."
 
+    # Collect text from links
     collected_text = []
     for link in links:
         try:
             resp = requests.get(link, headers=headers, timeout=10)
             resp.raise_for_status()
             page_soup = BeautifulSoup(resp.text, "html.parser")
-
-            texts = [p.get_text(strip=True) for p in page_soup.find_all("p")[:max_paragraphs]]
-            if not texts:
-                texts = [div.get_text(strip=True) for div in page_soup.find_all("div")[:max_paragraphs]]
+            texts = [tag.get_text(strip=True) for tag in page_soup.find_all(["p","div","span"])[:max_paragraphs]]
             collected_text.extend(texts)
         except Exception:
             continue
@@ -145,6 +141,7 @@ else:
 def chat_loop():
     global faiss
     console.print("[bold green]Gemini RAG Chat[/bold green]. Type 'exit' to quit.")
+    conversation_history = []
 
     text_splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=50)
 
@@ -153,12 +150,15 @@ def chat_loop():
         if user_input.lower() in ("exit", "quit"):
             break
 
-        # Web info retrieval
+        # Web scraping for timely info
         if needs_timely_info(user_input):
             with console.status("[bold yellow]Fetching timely info from the web...[/bold yellow]", spinner="dots"):
                 web_info = fetch_web_info(user_input)
                 time.sleep(0.5)
-            prompt_with_web = f"{user_input}\n\nUse this up-to-date information to answer:\n{web_info}"
+            if web_info not in ("No search links found.", "No timely info found."):
+                prompt_with_web = f"{user_input}\n\nUse this up-to-date information to answer:\n{web_info}"
+            else:
+                prompt_with_web = user_input
         else:
             prompt_with_web = user_input
 
@@ -168,25 +168,30 @@ def chat_loop():
             relevant_docs = faiss.similarity_search(user_input, k=3)
             retrieved_text = " ".join([doc.page_content for doc in relevant_docs])
 
-        # Final Gemini prompt
+        # Final prompt for Gemini
         llm_prompt = prompt_with_web
         if retrieved_text:
             llm_prompt += f"\n\nConsider this past info:\n{retrieved_text}"
 
+        # Query Gemini
         with console.status("[bold yellow]LLM is generating...[/bold yellow]", spinner="dots"):
-            response = query_gemini(llm_prompt)
+            try:
+                response = query_gemini(llm_prompt)
+            except requests.exceptions.HTTPError as e:
+                response = f"[Error] Gemini API request failed: {e}"
 
-        # Store new input + response in FAISS
+        # Update FAISS memory
         chunks = text_splitter.split_text(user_input + " " + response)
         if not faiss:
             faiss = FAISS.from_texts(chunks, embeddings)
         else:
             faiss.add_texts(chunks)
 
-        # Save FAISS safely
         faiss.save_local(VECTOR_DB_PATH)
 
+        # Print chat
         console.print("[bold magenta]Gemini:[/bold magenta]", response)
+        conversation_history.append({"user": user_input, "gemini": response})
 
 if __name__ == "__main__":
     chat_loop()
