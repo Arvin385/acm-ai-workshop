@@ -124,4 +124,10 @@ def chat_loop():
             try:
                 response = query_gemini(final_prompt)
             except requests.exceptions.HTTPError as e:
-                response = f"[Error] G
+                response = f"[Error] Gemini API request failed: {e}"
+
+        console.print("[bold cyan]You:[/bold cyan]", user_input)
+        console.print("[bold magenta]Gemini:[/bold magenta]", response)
+
+if __name__ == "__main__":
+    chat_loop()
