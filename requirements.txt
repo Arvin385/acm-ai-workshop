@@ -111,3 +111,10 @@ wsproto==1.2.0
 xxhash==3.6.0
 yarl==1.22.0
 zstandard==0.25.0
+requests
+beautifulsoup4
+sentence_transformers
+langchain
+lang_chain_community
+faiss-cpu
+rich
