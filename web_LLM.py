@@ -137,13 +137,23 @@ def chat_loop():
             with console.status("[bold yellow]Fetching timely info from the web...[/bold yellow]", spinner="dots"):
                 web_info = fetch_web_info(user_input)
                 time.sleep(0.5)  # small delay to make spinner visible
-            with console.status("[bold yellow]LLM is generating...[/bold yellow]", spinner="dots"):
-                final_prompt = f"{user_input}\n\nUse this up-to-date information to answer:\n{web_info}"
-                response = query_gemini(final_prompt)
-        else:
-            response = query_gemini(user_input)
 
-        console.print("[bold cyan]You:[/bold cyan]", user_input)
+            # Structured prompt for the LLM to use web info authoritatively
+            final_prompt = (
+                "You are a helpful AI assistant. Answer the user's question using ONLY the information "
+                "provided below. Do not guess or add additional information.\n\n"
+                f"INFORMATION:\n{web_info}\n\n"
+                f"QUESTION:\n{user_input}\n\n"
+                "Provide a concise, factual answer based strictly on the information above."
+            )
+        else:
+            final_prompt = user_input
+
+        with console.status("[bold yellow]LLM is generating...[/bold yellow]", spinner="dots"):
+            response = query_gemini(final_prompt)
+
+        # Print chat
+        # Remove duplicate user line to avoid double printing
         console.print("[bold magenta]Gemini:[/bold magenta]", response)
         conversation_history.append({"user": user_input, "gemini": response})
 
