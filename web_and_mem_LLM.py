@@ -13,12 +13,12 @@ from rich.text import Text
 # -----------------------
 # LangChain FAISS imports
 # -----------------------
-from langchain.embeddings import LlamaCppEmbeddings  # or your embedding
-from langchain.vectorstores import FAISS
-from langchain.text_splitter import RecursiveCharacterTextSplitter
+# from langchain.embeddings import LlamaCppEmbeddings  # or your embedding
+from langchain_community.vectorstores import FAISS
+from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 from sentence_transformers import SentenceTransformer
-from langchain.embeddings import HuggingFaceEmbeddings
+from langchain_community.embeddings import HuggingFaceEmbeddings
 
 import warnings
 warnings.filterwarnings("ignore", category=DeprecationWarning)
