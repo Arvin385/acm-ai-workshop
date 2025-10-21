@@ -37,13 +37,16 @@ $env:GEMINI_API_KEY="your_api_key_here"
 ### 1.2 Create a Python Virtual Environment
 
 We recommend using a virtual environment to manage dependencies:
+ (Note: We reccomend using Python 3.12 for this workshop as it has better compatibility)
 
 ```bash
-python -m venv venv
+# If you have version 3.12 by default, run:
+python -m venv acm-ai-venv
+# RECCOMENDED: 
+py -3.12 -m venv acm-ai-venv
+source acm-ai-venv/bin/activate      # On Linux/macOS
 
-source venv/bin/activate      # On Linux/macOS
-
-venv\Scripts\activate         # On Windows
+acm-ai-venv\Scripts\activate         # On Windows
 ```
 On Windows, if you encounter an execution policy error, you may have to run the following in Command Prompt:
 ```bash
@@ -58,7 +61,7 @@ To check if you have it or not, run:
 ```bash
 python --version
 ```
-If you get an actual version, you are set. If you get some error about Python not existing, then you need to install it (Python website for Windows, and use Homebrew for Mac).
+If you get an actual version, you are set. If you get some error about Python not existing, then you need to install it (Python website for Windows, and use Homebrew for Mac). Again, we reccomend installing Python 3.12 for this workshop.
 
 ```bash
 pip install -r requirements.txt
@@ -101,7 +104,7 @@ python web_LLM.py
 KEYWORDS = ["stock", "news", "weather", "when", "time", "crypto"]
 ```
 
-* Add or remove keywords to control **when web scraping happens**.
+* Add or remove keywords to control **when web scraping happens**. Otherwise, webscraping will be bypassed. 
 
 #### Web scraping depth (Lines ~60–80)
 
