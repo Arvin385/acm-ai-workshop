@@ -1,0 +1,18 @@
+# Virtual Environment
+venv5/
+.venv/
+.venv1/
+.venv2/
+.venv3/
+.venv4/
+
+
+# FAISS local database
+faiss_index/
+
+# Python cache
+__pycache__/
+*.pyc
+
+# macOS junk
+.DS_Store
