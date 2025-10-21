@@ -64,20 +64,21 @@ from bs4 import BeautifulSoup
 import urllib
 from urllib.parse import urlparse, parse_qs, unquote
 
+
 def extract_real_url(duck_url):
     """
-    Converts DuckDuckGo redirect link to the actual target URL.
+    Decodes DuckDuckGo redirect links and returns the actual URL.
     """
     parsed = urlparse(duck_url)
-    if "duckduckgo.com" in parsed.netloc and parsed.path == "/l/":
+    if "duckduckgo.com" in parsed.netloc and parsed.path.startswith("/l/"):
         qs = parse_qs(parsed.query)
         if "uddg" in qs:
             return unquote(qs["uddg"][0])
     return duck_url
-def fetch_web_info(query, max_links=5, max_paragraphs=10, char_limit=2000):
+
+def fetch_web_info(query, max_links=5, max_paragraphs=5):
     """
-    Fetches text from top DuckDuckGo search results.
-    Returns combined text from multiple pages, limited to `char_limit` characters.
+    Fetches text from the top DuckDuckGo search results.
     """
     query_encoded = urllib.parse.quote_plus(query)
     search_url = f"https://duckduckgo.com/html/?q={query_encoded}"
@@ -89,27 +90,23 @@ def fetch_web_info(query, max_links=5, max_paragraphs=10, char_limit=2000):
     try:
         response = requests.get(search_url, headers=headers, timeout=5)
         response.raise_for_status()
-        soup = BeautifulSoup(response.text, "html.parser")
     except Exception as e:
-        print("Error fetching search results:", e)
-        return "No timely info found."
+        return f"Failed to fetch search results: {e}"
 
-    # Extract top links more flexibly
+    soup = BeautifulSoup(response.text, "html.parser")
+
+    # Collect links
     links = []
-    for a_tag in soup.find_all("a"):
-        href = a_tag.get("href")
-        if href and "duckduckgo.com/l/" in href:
+    for a_tag in soup.find_all("a", href=True):
+        href = a_tag["href"]
+        if "duckduckgo.com/l/" in href or (href.startswith("http") and "duckduckgo.com" not in href):
             real_url = extract_real_url(href)
             if real_url not in links:
                 links.append(real_url)
         if len(links) >= max_links:
             break
 
-    if not links:
-        print("No links found in search results.")
-        return "No timely info found."
-
-    # Scrape each link
+    # Scrape each link for text
     collected_text = []
     for link in links:
         try:
@@ -117,25 +114,16 @@ def fetch_web_info(query, max_links=5, max_paragraphs=10, char_limit=2000):
             resp.raise_for_status()
             page_soup = BeautifulSoup(resp.text, "html.parser")
 
-            # Grab text from <p> or <div>
+            # Grab text from <p> tags first
             texts = [p.get_text(strip=True) for p in page_soup.find_all("p")[:max_paragraphs]]
             if not texts:
+                # fallback to <div> if no <p> found
                 texts = [div.get_text(strip=True) for div in page_soup.find_all("div")[:max_paragraphs]]
-
-            # fallback: grab first char_limit chars of full page text
-            if not texts:
-                texts = [page_soup.get_text(strip=True)[:char_limit]]
-
             collected_text.extend(texts)
-        except Exception as e:
-            print(f"Skipping {link}: {e}")
+        except Exception:
             continue
 
-    combined_text = " ".join(collected_text)[:char_limit]
-    if not combined_text:
-        return "No timely info found."
-
-    return combined_text
+    return " ".join(collected_text) if collected_text else "No timely info found."
 
 
 console = Console()
