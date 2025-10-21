@@ -135,7 +135,7 @@ def chat_loop():
         # Check if we need to scrape
         if needs_timely_info(user_input):
             with console.status("[bold yellow]Fetching timely info from the web...[/bold yellow]", spinner="dots"):
-                web_info = fetch_web_info_selenium(user_input)
+                web_info = fetch_web_info(user_input)
                 time.sleep(0.5)  # small delay to make spinner visible
             with console.status("[bold yellow]LLM is generating...[/bold yellow]", spinner="dots"):
                 final_prompt = f"{user_input}\n\nUse this up-to-date information to answer:\n{web_info}"
