@@ -13,7 +13,14 @@ This repository contains **three programs**:
 3. **Web + Memory + Gemini LLM** – Adds a FAISS memory system to remember prior interactions.
 
 ---
+## Getting Started:
 
+You first need to clone the repo in order to have access to all the files on your computer locally:
+```bash
+git clone https://github.com/Arvin385/acm-ai-workshop.git
+# Then enter the directory
+cd acm-ai-workshop
+```
 ## 1. Prerequisites
 
 ### 1.1 Gemini API Key
