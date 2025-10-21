@@ -78,21 +78,31 @@ def extract_real_url(duck_url):
             return unquote(qs["uddg"][0])
     return duck_url
 
-def fetch_web_info(query, max_links=3, max_paragraphs=5):
-    """Fetches text from the first few paragraphs of the top N DuckDuckGo results."""
+def fetch_web_info(query, max_links=5, max_paragraphs=7):
+    """Fetches text from the first few paragraphs of the top DuckDuckGo results."""
     query_encoded = urllib.parse.quote_plus(query)
     search_url = f"https://duckduckgo.com/html/?q={query_encoded}"
     headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"}
 
-    response = requests.get(search_url, headers=headers)
-    response.raise_for_status()
+    try:
+        response = requests.get(search_url, headers=headers, timeout=5)
+        response.raise_for_status()
+    except Exception as e:
+        return f"Failed to fetch search results: {e}"
+
     soup = BeautifulSoup(response.text, "html.parser")
 
+    # Try multiple ways to find result links
     links = []
-    for a_tag in soup.find_all("a", class_="result__a")[:max_links]:
+    for a_tag in soup.find_all("a"):
         href = a_tag.get("href")
-        if href:
+        if href and ("http" in href or "duckduckgo.com/l/?" in href):
             links.append(extract_real_url(href))
+        if len(links) >= max_links:
+            break
+
+    if not links:
+        return "No search links found."
 
     collected_text = []
     for link in links:
@@ -100,6 +110,8 @@ def fetch_web_info(query, max_links=3, max_paragraphs=5):
             resp = requests.get(link, headers=headers, timeout=5)
             resp.raise_for_status()
             page_soup = BeautifulSoup(resp.text, "html.parser")
+
+            # Get text from <p> and fallback to <div>
             texts = [p.get_text(strip=True) for p in page_soup.find_all("p")[:max_paragraphs]]
             if not texts:
                 texts = [div.get_text(strip=True) for div in page_soup.find_all("div")[:max_paragraphs]]
@@ -107,7 +119,9 @@ def fetch_web_info(query, max_links=3, max_paragraphs=5):
         except Exception:
             continue
 
-    return " ".join(collected_text) or "No timely info found."
+    if not collected_text:
+        return "No timely info found."
+    return " ".join(collected_text)
 
 # -----------------------
 # Rich Console
